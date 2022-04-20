@@ -3,6 +3,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 import numpy as np
+from scipy import integrate
 import matplotlib.pyplot as plt
 
 def unpackFile(filename):
@@ -36,8 +37,8 @@ def findForward(norm, mag):
         if mag[i] > 0.5:
             return norm[i]
 
-def integrate(accel):
-    return np.trapz(accel,dx=1/104)
+def calcSpeed(accel):
+    return integrate.cumtrapz(accel*21.937, initial=0 ,dx=1/104)
 
 home = "C:\\Users\\Will\\Documents\\Year 3\\Project\\data"
 commandList = """Commands:
@@ -98,6 +99,31 @@ def accelCommand(command):
     return
 
 def speedCommand(command):
+    plt.close()
+    if len(command) < 2:
+        print("accel usage - 'accel <file number(s)>'")
+        return
+    nums = [int(given)-1 for given in command[1:]]
+    for num in nums:
+        if(num < 0 or num >= len(files)):
+            print("No file with number",num)
+        mat = unpackFile(join(home,files[num]))
+        removeGravity(mat)
+        mag = getMagnitude(mat)
+        direction = normalise(mat,mag)
+        forward = findForward(direction,mag)
+        if forward is None:
+            print("No forward acceleration found for",files[num])
+            continue
+        direction = direction.dot(forward)
+        accel = mag*direction
+        speed = calcSpeed(accel)
+        print(speed)
+        time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
+        plt.plot(time,speed, label=files[num])
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Speed (mph)")
+    plt.show(block=False)
     return
 
 def homeCommand(command):
