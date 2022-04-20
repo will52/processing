@@ -1,5 +1,7 @@
 import struct
 import os
+from os import listdir
+from os.path import isfile, join
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -43,13 +45,28 @@ commandList = """Commands:
     'accel <file number(s)>' - Displays the acceleration graph of the numbered file from the list, optionally list more file numbers to compare on the same graph
     'speed <file number(s)>' - Displays the speed graph of the numbered file from the list, optionally list more file numbers to compare on the same graph
     'home <directory>' - Change the home directory that files will be displayed from
+    'rename <file number> <new name>' - Rename the numbered file from the list
     'help' - Display this list of commands
     'quit' - Exit the program"""
 
+print("Default home folder is",home)
 print(commandList)
 
 def listCommand():
-    return
+    for i in range(0,len(files)):
+        print(i+1,"-",files[i])
+
+def renameCommand(command):
+    global files
+    if len(command) < 3:
+        print("rename usage - 'rename <file number> <new name>'")
+        return
+    num = int(command[1])-1
+    if num < 0 or num >= len(files):
+        print("No file with that number")
+        return
+    os.rename(join(home,files[num]),join(home,command[2]+".DAT"))
+    files = [f for f in listdir(home) if isfile(join(home, f))]
 
 def accelCommand(command):
     return
@@ -58,7 +75,16 @@ def speedCommand(command):
     return
 
 def homeCommand(command):
-    return
+    global home
+    global files
+    if len(command) < 2:
+        print("home usage - 'home <directory>'")
+        return
+    home = command[1]
+    print("New home directory:",home)
+    files = [f for f in listdir(home) if isfile(join(home, f))]
+
+files = [f for f in listdir(home) if isfile(join(home, f))]
 
 while True:
     print(">",end='')
@@ -71,6 +97,8 @@ while True:
         speedCommand(command)
     elif command[0] == "home":
         homeCommand(command)
+    elif command[0] == "rename":
+        renameCommand(command)
     elif command[0] == "help":
         print(commandList)
     elif command[0] == "quit":
