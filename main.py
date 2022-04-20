@@ -42,12 +42,15 @@ def integrate(accel):
 home = "C:\\Users\\Will\\Documents\\Year 3\\Project\\data"
 commandList = """Commands:
     'list' - Lists the files in the home folder with a number assigned to each
-    'accel <file number(s)>' - Displays the acceleration graph of the numbered file from the list, optionally list more file numbers to compare on the same graph
-    'speed <file number(s)>' - Displays the speed graph of the numbered file from the list, optionally list more file numbers to compare on the same graph
+    'accel <file number(s)>' -  Displays the acceleration graph of the numbered file from the list, 
+                                optionally list more file numbers seperated by spaces to compare on the same graph
+    'speed <file number(s)>' -  Displays the speed graph of the numbered file from the list, 
+                                optionally list more file numbers seperated by spaces to compare on the same graph
     'home <directory>' - Change the home directory that files will be displayed from
     'rename <file number> <new name>' - Rename the numbered file from the list
     'help' - Display this list of commands
-    'quit' - Exit the program"""
+    'quit' - Exit the program
+    """
 
 print("Default home folder is",home)
 print(commandList)
@@ -69,6 +72,29 @@ def renameCommand(command):
     files = [f for f in listdir(home) if isfile(join(home, f))]
 
 def accelCommand(command):
+    plt.close()
+    if len(command) < 2:
+        print("accel usage - 'accel <file number(s)>'")
+        return
+    nums = [int(given)-1 for given in command[1:]]
+    for num in nums:
+        if(num < 0 or num >= len(files)):
+            print("No file with number",num)
+        mat = unpackFile(join(home,files[num]))
+        removeGravity(mat)
+        mag = getMagnitude(mat)
+        direction = normalise(mat,mag)
+        forward = findForward(direction,mag)
+        if forward is None:
+            print("No forward acceleration found for",files[num])
+            continue
+        direction = direction.dot(forward)
+        accel = mag*direction
+        time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
+        plt.plot(time,accel, label=files[num])
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Acceleration (Gs)")
+    plt.show(block=False)
     return
 
 def speedCommand(command):
