@@ -32,29 +32,13 @@ def getMagnitude(mat):
 def normalise(mat, mag):
     return mat / mag.reshape(-1,1)
 
-def findForward(norm, mag):
-    for i in range(0,mag.shape[0]):
-        if mag[i] > 0.5:
-            return norm[i]
+def findForward(mat):
+    M = mat.T @ mat
+    eigenvals, eigenvecs = np.linalg.eigh(M)
+    return eigenvecs[:,2]    
 
 def calcSpeed(accel):
     return integrate.cumtrapz(accel*21.937, initial=0 ,dx=1/104)
-
-home = "C:\\Users\\Will\\Documents\\Year 3\\Project\\data"
-commandList = """Commands:
-    'list' - Lists the files in the home folder with a number assigned to each
-    'accel <file number(s)>' -  Displays the acceleration graph of the numbered file from the list, 
-                                optionally list more file numbers seperated by spaces to compare on the same graph
-    'speed <file number(s)>' -  Displays the speed graph of the numbered file from the list, 
-                                optionally list more file numbers seperated by spaces to compare on the same graph
-    'home <directory>' - Change the home directory that files will be displayed from
-    'rename <file number> <new name>' - Rename the numbered file from the list
-    'help' - Display this list of commands
-    'quit' - Exit the program
-    """
-
-print("Default home folder is",home)
-print(commandList)
 
 def listCommand():
     for i in range(0,len(files)):
@@ -85,10 +69,7 @@ def accelCommand(command):
         removeGravity(mat)
         mag = getMagnitude(mat)
         direction = normalise(mat,mag)
-        forward = findForward(direction,mag)
-        if forward is None:
-            print("No forward acceleration found for",files[num])
-            continue
+        forward = findForward(mat)
         direction = direction.dot(forward)
         accel = mag*direction
         time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
@@ -111,14 +92,10 @@ def speedCommand(command):
         removeGravity(mat)
         mag = getMagnitude(mat)
         direction = normalise(mat,mag)
-        forward = findForward(direction,mag)
-        if forward is None:
-            print("No forward acceleration found for",files[num])
-            continue
+        forward = findForward(mat)
         direction = direction.dot(forward)
         accel = mag*direction
         speed = calcSpeed(accel)
-        print(speed)
         time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
         plt.plot(time,speed, label=files[num])
     plt.xlabel("Time (seconds)")
@@ -135,6 +112,22 @@ def homeCommand(command):
     home = command[1]
     print("New home directory:",home)
     files = [f for f in listdir(home) if isfile(join(home, f))]
+
+home = "C:\\Users\\Will\\Documents\\Year 3\\Project\\data"
+commandList = """Commands:
+    'list' - Lists the files in the home folder with a number assigned to each
+    'accel <file number(s)>' -  Displays the acceleration graph of the numbered file from the list, 
+                                optionally list more file numbers separated by spaces to compare on the same graph
+    'speed <file number(s)>' -  Displays the speed graph of the numbered file from the list, 
+                                optionally list more file numbers seperated by spaces to compare on the same graph
+    'home <directory>' - Change the home directory that files will be displayed from
+    'rename <file number> <new name>' - Rename the numbered file from the list
+    'help' - Display this list of commands
+    'quit' - Exit the program
+    """
+
+print("Default home folder is",home)
+print(commandList)
 
 files = [f for f in listdir(home) if isfile(join(home, f))]
 
