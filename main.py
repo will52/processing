@@ -3,7 +3,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-from scipy import integrate
+from scipy import integrate, signal
 import matplotlib.pyplot as plt
 
 def unpackFile(filename):
@@ -29,7 +29,7 @@ def removeGravity(mat):
 def getMagnitude(mat):
     return np.linalg.norm(mat,axis=1)
 
-def normalise(mat, mag):
+def getDirection(mat, mag):
     return mat / mag.reshape(-1,1)
 
 def findForward(mat):
@@ -40,7 +40,18 @@ def findForward(mat):
 def calcSpeed(accel):
     return integrate.cumtrapz(accel*21.937, initial=0 ,dx=1/104)
 
+def getForwardAccel(fileNum):
+    raw = unpackFile(join(home,files[fileNum]))
+    removeGravity(raw)
+    mag = getMagnitude(raw)
+    direction = getDirection(raw, mag)
+    forward = findForward(raw)
+    direction = direction.dot(forward)
+    return mag*direction
+
 def listCommand():
+    global files
+    files = [f for f in listdir(home) if isfile(join(home, f))]
     for i in range(0,len(files)):
         print(i+1,"-",files[i])
 
@@ -65,15 +76,10 @@ def accelCommand(command):
     for num in nums:
         if(num < 0 or num >= len(files)):
             print("No file with number",num)
-        mat = unpackFile(join(home,files[num]))
-        removeGravity(mat)
-        mag = getMagnitude(mat)
-        direction = normalise(mat,mag)
-        forward = findForward(mat)
-        direction = direction.dot(forward)
-        accel = mag*direction
+        accel = getForwardAccel(num)
+        smoothed = signal.savgol_filter(accel, 51, 3)
         time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
-        plt.plot(time,accel, label=files[num])
+        plt.plot(time,smoothed, label=files[num])
     plt.xlabel("Time (seconds)")
     plt.ylabel("Acceleration (Gs)")
     plt.show(block=False)
@@ -82,19 +88,13 @@ def accelCommand(command):
 def speedCommand(command):
     plt.close()
     if len(command) < 2:
-        print("accel usage - 'accel <file number(s)>'")
+        print("speed usage - 'speed <file number(s)>'")
         return
     nums = [int(given)-1 for given in command[1:]]
     for num in nums:
         if(num < 0 or num >= len(files)):
             print("No file with number",num)
-        mat = unpackFile(join(home,files[num]))
-        removeGravity(mat)
-        mag = getMagnitude(mat)
-        direction = normalise(mat,mag)
-        forward = findForward(mat)
-        direction = direction.dot(forward)
-        accel = mag*direction
+        accel = getForwardAccel(num)
         speed = calcSpeed(accel)
         time = np.linspace(0,accel.shape[0]/104,accel.shape[0])
         plt.plot(time,speed, label=files[num])
