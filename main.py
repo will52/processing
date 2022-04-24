@@ -23,7 +23,7 @@ def unpackFile(filename):
     return mat
 
 def removeGravity(mat):
-    gravity = np.mean(mat[:10],axis=0)
+    gravity = np.mean(mat[:50],axis=0)
     mat -= gravity
 
 def getMagnitude(mat):
@@ -35,7 +35,7 @@ def getDirection(mat, mag):
 def findForward(mat):
     M = mat.T @ mat
     eigenvals, eigenvecs = np.linalg.eigh(M)
-    return eigenvecs[:,2]    
+    return eigenvecs[:,2]*-1    
 
 def calcSpeed(accel):
     return integrate.cumtrapz(accel*21.937, initial=0 ,dx=1/104)
@@ -51,7 +51,7 @@ def getForwardAccel(fileNum):
 
 def listCommand():
     global files
-    files = [f for f in listdir(home) if isfile(join(home, f))]
+    files = [f for f in listdir(home) if isfile(join(home, f)) and f.endswith(".DAT")]
     for i in range(0,len(files)):
         print(i+1,"-",files[i])
 
@@ -65,7 +65,7 @@ def renameCommand(command):
         print("No file with that number")
         return
     os.rename(join(home,files[num]),join(home,command[2]+".DAT"))
-    files = [f for f in listdir(home) if isfile(join(home, f))]
+    files = [f for f in listdir(home) if isfile(join(home, f)) and f.endswith(".DAT")]
 
 def accelCommand(command):
     plt.close()
@@ -111,7 +111,7 @@ def homeCommand(command):
         return
     home = command[1]
     print("New home directory:",home)
-    files = [f for f in listdir(home) if isfile(join(home, f))]
+    files = [f for f in listdir(home) if isfile(join(home, f)) and f.endswith(".DAT")]
 
 home = "C:\\Users\\Will\\Documents\\Year 3\\Project\\data"
 commandList = """Commands:
@@ -129,7 +129,7 @@ commandList = """Commands:
 print("Default home folder is",home)
 print(commandList)
 
-files = [f for f in listdir(home) if isfile(join(home, f))]
+files = [f for f in listdir(home) if isfile(join(home, f)) and f.endswith(".DAT")]
 
 while True:
     print(">",end='')
